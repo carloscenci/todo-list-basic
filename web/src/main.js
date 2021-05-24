@@ -1,0 +1,58 @@
+import { createApp } from 'vue'
+import Todos from './api/todos'
+import './assets/css/main.css'
+
+const apiTodos = new Todos()
+
+const app = createApp({
+    data() {
+        return {
+            todos: [],
+            form: {
+                text: '',
+                done: false
+            },
+            loading: false
+        }
+    },
+    created() {
+        this.fetchTodos()
+    },
+    methods: {
+        async fetchTodos(){
+            try {
+                this.loading = true
+                this.todos = await apiTodos.index()
+            } catch(error) {
+                alert('Deu erro')
+            } finally {
+                this.loading = false
+            }
+        },
+        async createTodo() {
+            this.loading = true
+            const data = await apiTodos.store(this.form)
+            this.todos.push(data)
+            this.form.text = ''
+            this.form.done = false
+            this.loading = false
+        },
+        async toggleTodoStatus(todo){
+            const data = await apiTodos.update({
+                ...todo,
+                done: !todo.done
+            })
+
+            const index = this.todos.findIndex(({id}) => id === data.id)
+            this.todos[index] = data
+        },
+        async destroyTodo(id){
+            await apiTodos.destroy({id})
+
+            const index = this.todos.findIndex((todo) => todo.id === id)
+            this.todos.splice(index, 1)
+        }
+    }
+})
+
+app.mount('#app')
